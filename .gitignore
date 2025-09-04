@@ -44,7 +44,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+ml-service/ml-env/
 lib64/
 parts/
 sdist/

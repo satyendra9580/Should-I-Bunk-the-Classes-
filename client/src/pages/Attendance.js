@@ -114,8 +114,13 @@ const Attendance = () => {
     try {
       const response = await axios.post('/api/attendance', {
         subject: formData.subject,
+        subjectCode: formData.subjectCode || formData.subject.toUpperCase().replace(/\s+/g, ''),
         date: formData.date,
-        status: formData.isPresent,
+        isPresent: formData.isPresent,
+        classType: formData.classType || 'lecture',
+        duration: formData.duration || 60,
+        semester: formData.semester || 1,
+        academicYear: formData.academicYear || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
         notes: formData.notes
       }, {
         headers: {

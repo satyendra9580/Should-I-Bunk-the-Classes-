@@ -7,7 +7,6 @@ import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const Settings = () => {
   const { user, token, logout } = useAuthStore();
-  const { settings, updateSetting, updateAllSettings, updateSettingsWithoutThemeChange, resetToDefaults, getLanguageText } = useSettingsStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -44,12 +43,6 @@ const Settings = () => {
     fetchSettings();
   }, []);
 
-  // Sync localSettings with global settings store
-  useEffect(() => {
-    if (settings) {
-      setLocalSettings(settings);
-    }
-  }, [settings]);
 
   const fetchSettings = async () => {
     try {
@@ -60,13 +53,7 @@ const Settings = () => {
         }
       });
 
-      if (response.ok) {
-        const data = response.data;
-        if (data.settings) {
-          setLocalSettings(data.settings);
-          updateAllSettings(response.data.settings || {});
-        }
-      }
+      setLocalSettings(response.data.settings || {});
     } catch (err) {
       console.error('Error loading settings:', err);
       if (err.response && err.response.data) {
@@ -132,7 +119,7 @@ const Settings = () => {
     }
   };
 
-  if (loading && Object.keys(settings).length === 0) {
+  if (loading && Object.keys(localSettings).length === 0) {
     return (
       <div className="flex justify-center items-center h-64">
         <LoadingSpinner size="lg" />
@@ -146,7 +133,25 @@ const Settings = () => {
         <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Settings</h1>
         <div className="flex space-x-3">
           <button
-            onClick={resetToDefaults}
+            onClick={() => setLocalSettings({
+              notifications: {
+                emailNotifications: true,
+                examReminders: true,
+                attendanceAlerts: true,
+                pushNotifications: false,
+                weeklyReports: true
+              },
+              privacy: {
+                profileVisibility: 'private',
+                shareAttendance: false,
+                shareExamResults: false
+              },
+              academic: {
+                defaultAttendanceGoal: 75,
+                reminderDaysBefore: 3,
+                autoCalculateGPA: true
+              }
+            })}
             className="px-4 py-2 text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
             Reset to Defaults

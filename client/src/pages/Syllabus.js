@@ -61,10 +61,10 @@ const Syllabus = () => {
       const inProgress = total - completed; 
       const completionPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-      setSyllabusStats({
-        total,
-        completed,
-        inProgress,
+      setStats({
+        totalTopics: total,
+        completedTopics: completed,
+        inProgressTopics: inProgress,
         completionPercentage
       });
     } catch (err) {

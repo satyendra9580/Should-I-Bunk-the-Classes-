@@ -1,29 +1,26 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
-import useSettingsStore from '../../store/settingsStore';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
-  const { settings, updateSetting, getLanguageText } = useSettingsStore();
   const location = useLocation();
 
   if (!user) return null;
 
   const menuItems = [
-    { path: '/dashboard', name: getLanguageText('dashboard', 'Dashboard'), icon: '📊' },
-    { path: '/attendance', name: getLanguageText('attendance', 'Attendance'), icon: '📝' },
-    { path: '/exams', name: getLanguageText('exams', 'Exams'), icon: '📅' },
-    { path: '/syllabus', name: getLanguageText('syllabus', 'Syllabus'), icon: '📚' },
+    { path: '/dashboard', name: 'Dashboard', icon: '📊' },
+    { path: '/attendance', name: 'Attendance', icon: '📝' },
+    { path: '/exams', name: 'Exams', icon: '📅' },
+    { path: '/syllabus', name: 'Syllabus', icon: '📚' },
     { path: '/predictions', name: 'Predictions', icon: '🤖' },
-    { path: '/profile', name: getLanguageText('profile', 'Profile'), icon: '👤' },
-    { path: '/settings', name: getLanguageText('settings', 'Settings'), icon: '⚙️' },
+    { path: '/profile', name: 'Profile', icon: '👤' },
+    { path: '/settings', name: 'Settings', icon: '⚙️' },
   ];
 
   const toggleTheme = () => {
-    const currentTheme = settings?.preferences?.theme || 'light';
-    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-    updateSetting('preferences', 'theme', newTheme);
+    // Theme toggle functionality can be added later
+    console.log('Theme toggle clicked');
   };
 
   return (

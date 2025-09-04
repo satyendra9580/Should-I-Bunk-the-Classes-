@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import useSettingsStore from '../../store/settingsStore';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
   const { settings, updateSetting, getLanguageText } = useSettingsStore();
   const location = useLocation();
@@ -27,44 +27,60 @@ const Sidebar = () => {
   };
 
   return (
-    <div className="fixed left-0 top-16 h-full w-64 bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 z-40 transition-colors duration-200">
-      <div className="p-4">
-        <nav className="space-y-2">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                }`}
-              >
-                <span className="text-lg">{item.icon}</span>
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
-        
-        {/* Theme Toggle Button */}
-        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <button
-            onClick={toggleTheme}
-            className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            <span className="text-lg">
-              {(settings?.preferences?.theme || 'light') === 'dark' ? '☀️' : '🌙'}
-            </span>
-            <span>
-              {(settings?.preferences?.theme || 'light') === 'dark' ? 'Light Mode' : 'Dark Mode'}
-            </span>
-          </button>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-50 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+      
+      {/* Sidebar */}
+      <div className={`fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-gray-800 shadow-lg border-r border-gray-200 dark:border-gray-700 z-50 transition-transform duration-300 ease-in-out ${
+        isOpen ? 'translate-x-0' : '-translate-x-full'
+      } lg:translate-x-0 lg:z-30`}>
+        <div className="p-4">
+          <nav className="space-y-2">
+            {menuItems.map((item) => {
+              const isActive = location.pathname === item.path;
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => {
+                    if (onClose) onClose();
+                  }}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary text-white'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  }`}
+                >
+                  <span className="text-lg">{item.icon}</span>
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          
+          {/* Theme Toggle Button */}
+          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <button
+              onClick={toggleTheme}
+              className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              <span className="text-lg">
+                {(settings?.preferences?.theme || 'light') === 'dark' ? '☀️' : '🌙'}
+              </span>
+              <span>
+                {(settings?.preferences?.theme || 'light') === 'dark' ? 'Light Mode' : 'Dark Mode'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

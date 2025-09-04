@@ -50,9 +50,6 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      console.log('=== PROFILE UPDATE DEBUG ===');
-      console.log('Form data:', formData);
-      console.log('Token:', token ? 'Present' : 'Missing');
 
       const response = await fetch('/api/auth/profile', {
         method: 'PUT',
@@ -63,20 +60,15 @@ const Profile = () => {
         body: JSON.stringify(formData)
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Success response:', data);
-        // Update the user in the store using setState
         useAuthStore.setState({ user: data.user });
         setSuccess('Profile updated successfully!');
         setIsEditing(false);
         setTimeout(() => setSuccess(''), 3000);
       } else {
         const errorData = await response.json();
-        console.log('Error response:', errorData);
         setError(errorData.message || 'Failed to update profile');
       }
     } catch (err) {

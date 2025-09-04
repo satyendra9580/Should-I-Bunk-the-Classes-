@@ -10,7 +10,7 @@ const router = express.Router();
 // @access  Private
 router.get('/', authenticateToken, validatePagination, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -61,7 +61,7 @@ router.get('/', authenticateToken, validatePagination, async (req, res) => {
 // @access  Private
 router.get('/completion', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const { subject, semester } = req.query;
     
     const completion = await Syllabus.getCompletionPercentage(
@@ -91,7 +91,7 @@ router.get('/completion', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/pending-priority', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const limit = parseInt(req.query.limit) || 10;
     
     const topics = await Syllabus.getPendingHighPriorityTopics(userId, limit);
@@ -118,7 +118,7 @@ router.get('/pending-priority', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/analytics', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const { semester } = req.query;
     
     const analytics = await Syllabus.getSyllabusAnalytics(userId, semester ? parseInt(semester) : null);
@@ -144,7 +144,7 @@ router.get('/analytics', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/revision', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     
     const topics = await Syllabus.getTopicsForRevision(userId);
     
@@ -172,7 +172,7 @@ router.get('/:id', authenticateToken, validateObjectId, async (req, res) => {
   try {
     const topic = await Syllabus.findOne({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!topic) {
@@ -205,7 +205,7 @@ router.post('/', authenticateToken, validateSyllabus, async (req, res) => {
   try {
     const topicData = {
       ...req.body,
-      userId: req.user._id
+      userId: req.user.userId
     };
 
     const topic = new Syllabus(topicData);
@@ -245,7 +245,7 @@ router.post('/bulk', authenticateToken, async (req, res) => {
     // Add userId to each topic
     const syllabusTopics = topics.map(topic => ({
       ...topic,
-      userId: req.user._id
+      userId: req.user.userId
     }));
 
     const createdTopics = await Syllabus.insertMany(syllabusTopics);
@@ -288,7 +288,7 @@ router.put('/:id', authenticateToken, validateObjectId, async (req, res) => {
     });
 
     const topic = await Syllabus.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
+      { _id: req.params.id, userId: req.user.userId },
       updates,
       { new: true, runValidators: true }
     );
@@ -325,7 +325,7 @@ router.put('/:id/complete', authenticateToken, validateObjectId, async (req, res
     const { actualHours } = req.body;
 
     const topic = await Syllabus.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
+      { _id: req.params.id, userId: req.user.userId },
       { 
         isCompleted: true,
         completedDate: new Date(),
@@ -365,7 +365,7 @@ router.put('/:id/review', authenticateToken, validateObjectId, async (req, res) 
   try {
     const topic = await Syllabus.findOne({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!topic) {
@@ -401,7 +401,7 @@ router.delete('/:id', authenticateToken, validateObjectId, async (req, res) => {
   try {
     const topic = await Syllabus.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!topic) {

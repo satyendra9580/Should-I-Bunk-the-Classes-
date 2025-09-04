@@ -65,7 +65,6 @@ const Settings = () => {
         }
       }
     } catch (err) {
-      console.log('Settings not found, using defaults');
     } finally {
       setLoading(false);
     }

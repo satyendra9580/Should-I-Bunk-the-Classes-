@@ -162,7 +162,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 router.post('/refresh', authenticateToken, async (req, res) => {
   try {
     // Generate new token
-    const token = generateToken(req.user._id);
+    const token = generateToken(req.user.userId);
 
     res.json({
       success: true,
@@ -220,7 +220,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // Check if email is already taken by another user
     if (email !== req.user.email) {
-      const existingUser = await User.findOne({ email, _id: { $ne: req.user._id } });
+      const existingUser = await User.findOne({ email, _id: { $ne: req.user.userId } });
       if (existingUser) {
         return res.status(400).json({
           success: false,
@@ -231,7 +231,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // Check if student ID is already taken by another user (if provided)
     if (studentId && studentId !== req.user.studentId) {
-      const existingStudentId = await User.findOne({ studentId, _id: { $ne: req.user._id } });
+      const existingStudentId = await User.findOne({ studentId, _id: { $ne: req.user.userId } });
       if (existingStudentId) {
         return res.status(400).json({
           success: false,
@@ -242,7 +242,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // Update user profile
     const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
+      req.user.userId,
       {
         name,
         email,
@@ -295,7 +295,7 @@ router.put('/change-password', authenticateToken, async (req, res) => {
     }
 
     // Get user with password
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.userId);
 
     // Verify current password
     const isCurrentPasswordValid = await user.comparePassword(currentPassword);
@@ -329,7 +329,7 @@ router.put('/change-password', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/settings', authenticateToken, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.userId);
     
     res.json({
       success: true,
@@ -384,7 +384,7 @@ router.put('/settings', authenticateToken, async (req, res) => {
 
     // Update user preferences
     const updatedUser = await User.findByIdAndUpdate(
-      req.user._id,
+      req.user.userId,
       {
         preferences: {
           ...settings,
@@ -424,7 +424,7 @@ router.delete('/account', authenticateToken, async (req, res) => {
     }
 
     // Verify password before deletion
-    const user = await User.findById(req.user._id);
+    const user = await User.findById(req.user.userId);
     const isPasswordValid = await user.comparePassword(password);
     
     if (!isPasswordValid) {
@@ -440,10 +440,10 @@ router.delete('/account', authenticateToken, async (req, res) => {
     const Syllabus = require('../models/Syllabus');
 
     await Promise.all([
-      Attendance.deleteMany({ userId: req.user._id }),
-      Exam.deleteMany({ userId: req.user._id }),
-      Syllabus.deleteMany({ userId: req.user._id }),
-      User.findByIdAndDelete(req.user._id)
+      Attendance.deleteMany({ userId: req.user.userId }),
+      Exam.deleteMany({ userId: req.user.userId }),
+      Syllabus.deleteMany({ userId: req.user.userId }),
+      User.findByIdAndDelete(req.user.userId)
     ]);
 
     res.json({

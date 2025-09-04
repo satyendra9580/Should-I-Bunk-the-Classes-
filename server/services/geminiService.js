@@ -61,7 +61,7 @@ Use emojis, short sentences, and make it visually appealing. Avoid long paragrap
 `;
 
     // Get the generative model
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     // Generate content using Gemini
     const result = await model.generateContent([
@@ -81,7 +81,7 @@ Use emojis, short sentences, and make it visually appealing. Avoid long paragrap
         explanation
       },
       metadata: {
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-pro",
         timestamp: new Date().toISOString(),
         provider: "Google Gemini AI"
       }

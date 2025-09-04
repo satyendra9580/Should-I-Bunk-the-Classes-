@@ -60,12 +60,22 @@ const PublicRoute = ({ children }) => {
 
 // Main Layout Component
 const Layout = ({ children }) => {
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  const closeSidebar = () => {
+    setSidebarOpen(false);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      <Navbar />
+      <Navbar onToggleSidebar={toggleSidebar} />
       <div className="flex">
-        <Sidebar />
-        <main className="flex-1 ml-64 p-6 pt-20 text-gray-900 dark:text-gray-100">
+        <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
+        <main className="flex-1 lg:ml-64 p-3 sm:p-4 lg:p-6 pt-20 lg:pt-24 text-gray-900 dark:text-gray-100">
           {children}
         </main>
       </div>

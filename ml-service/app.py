@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os
 from dotenv import load_dotenv
 import logging
+import pandas as pd
 from utils.predictor import BunkPredictor
 
 # Load environment variables
@@ -377,9 +378,6 @@ def internal_error(error):
     }), 500
 
 if __name__ == '__main__':
-    # Import pandas here to avoid issues
-    import pandas as pd
-    
     # Initialize the predictor on startup
     startup()
     

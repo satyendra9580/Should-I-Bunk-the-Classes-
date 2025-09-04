@@ -61,7 +61,7 @@ router.get('/health', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const { subject, semester } = req.body;
 
     if (!subject) {
@@ -203,7 +203,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/batch', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const currentSemester = req.user.semester || 1;
 
     // Get all subjects for the user
@@ -332,7 +332,7 @@ function getFallbackRecommendation({ attendancePercentage, daysUntilExam, syllab
 // @access  Private
 router.get('/history', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     
     // For now, return empty array since we don't have a Prediction model
     // In production, you would query a Prediction collection
@@ -354,12 +354,11 @@ router.get('/history', authenticateToken, async (req, res) => {
 // @access  Private
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const predictionData = req.body;
     
     // For now, just return success
     // In production, you would save to a Prediction collection
-    console.log('Saving prediction for user:', userId);
     
     res.json({
       success: true,
@@ -374,8 +373,99 @@ router.post('/', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   POST /api/predictions/ai-recommendations-stream
+// @desc    Get enhanced AI recommendations using Gemini AI with streaming
+// @access  Private
+router.post('/ai-recommendations-stream', authenticateToken, async (req, res) => {
+  try {
+    const { prediction } = req.body;
+
+    // Validate that we have prediction data
+    if (!prediction) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required prediction data'
+      });
+    }
+
+    // Set up SSE headers
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    // Extract data from the prediction object
+    const academicData = prediction.academicData || {};
+    
+    // Prepare data for Gemini AI
+    const predictionData = {
+      attendance_percentage: academicData.attendancePercentage || 0,
+      exam_proximity_days: academicData.daysUntilExam || null,
+      syllabus_completion: academicData.syllabusCompletion || 0,
+      average_marks: academicData.averageMarks || null,
+      subject: 'Overall',
+      class_type: 'General',
+      recommendation: prediction.recommendation || 'Not Safe',
+      confidence: Math.round(prediction.confidence * 100) || 0,
+      explanation: prediction.explanation || 'Based on your academic data'
+    };
+
+
+    // Simulate streaming by sending the response in chunks
+    const streamResponse = async () => {
+      try {
+        // Get the full response from Gemini
+        const aiResult = await generateEnhancedRecommendations(predictionData);
+        const fullText = aiResult.aiRecommendation || aiResult.fallbackRecommendation || '';
+        
+        // Split the text into words for streaming
+        const words = fullText.split(' ');
+        const chunkSize = 3; // Send 3 words at a time
+        
+        for (let i = 0; i < words.length; i += chunkSize) {
+          const chunk = words.slice(i, Math.min(i + chunkSize, words.length)).join(' ');
+          const isLastChunk = i + chunkSize >= words.length;
+          
+          const data = {
+            content: chunk + (isLastChunk ? '' : ' '),
+            done: isLastChunk,
+            metadata: isLastChunk ? {
+              model: "gemini-2.5-flash",
+              timestamp: new Date().toISOString(),
+              provider: "Google Gemini AI"
+            } : undefined
+          };
+          
+          res.write(`data: ${JSON.stringify(data)}\n\n`);
+          
+          // Add a small delay to simulate streaming
+          await new Promise(resolve => setTimeout(resolve, 50));
+        }
+        
+        res.end();
+      } catch (error) {
+        console.error('Streaming error:', error);
+        res.write(`data: ${JSON.stringify({ error: error.message, done: true })}\n\n`);
+        res.end();
+      }
+    };
+
+    streamResponse();
+
+  } catch (error) {
+    console.error('Enhanced AI recommendations error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate enhanced AI recommendations',
+      error: error.message
+    });
+  }
+});
+
 // @route   POST /api/predictions/ai-recommendations
-// @desc    Get enhanced AI recommendations using Gemini AI
+// @desc    Get enhanced AI recommendations using Gemini AI (non-streaming)
 // @access  Private
 router.post('/ai-recommendations', authenticateToken, async (req, res) => {
   try {
@@ -405,7 +495,6 @@ router.post('/ai-recommendations', authenticateToken, async (req, res) => {
       explanation: prediction.explanation || 'Based on your academic data'
     };
 
-    console.log('Generating enhanced AI recommendations for:', predictionData);
 
     // Get enhanced recommendations from OpenAI
     const aiResult = await generateEnhancedRecommendations(predictionData);
@@ -434,7 +523,7 @@ router.post('/ai-recommendations', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/auto', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const currentSemester = req.user.semester || 1;
 
     // Fetch all academic data for the user (remove semester filter to get all data)
@@ -444,10 +533,6 @@ router.get('/auto', authenticateToken, async (req, res) => {
       Syllabus.find({ userId })
     ]);
 
-    console.log('🔍 Raw Data Fetched:');
-    console.log('- Attendance records found:', attendanceRecords.length);
-    console.log('- Exam records found:', examRecords.length);
-    console.log('- Syllabus records found:', syllabusRecords.length);
 
     // Calculate overall academic metrics (aggregate across all subjects)
     
@@ -456,28 +541,8 @@ router.get('/auto', authenticateToken, async (req, res) => {
     const totalPresentClasses = attendanceRecords.filter(record => record.isPresent === true).length;
     const overallAttendancePercentage = totalClasses > 0 ? Math.round((totalPresentClasses / totalClasses) * 100) : 0;
 
-    // Debug logging with actual data samples
-    console.log('📊 Prediction Data Debug:');
-    console.log('- Total attendance records:', attendanceRecords.length);
-    console.log('- Present classes:', totalPresentClasses);
-    console.log('- Attendance %:', overallAttendancePercentage);
-    console.log('- Total exam records:', examRecords.length);
     
-    // Log sample attendance records for debugging
-    if (attendanceRecords.length > 0) {
-      console.log('- Sample attendance records:');
-      attendanceRecords.slice(0, 3).forEach((record, index) => {
-        console.log(`  ${index + 1}. ${record.subject} - ${record.date.toDateString()} - Present: ${record.isPresent}`);
-      });
-    }
     
-    // Log sample exam records for debugging
-    if (examRecords.length > 0) {
-      console.log('- Sample exam records:');
-      examRecords.slice(0, 3).forEach((record, index) => {
-        console.log(`  ${index + 1}. ${record.subject} - ${record.title} - Date: ${record.date.toDateString()}`);
-      });
-    }
 
     // Find next upcoming exam (across all subjects)
     const currentDate = new Date();
@@ -485,19 +550,16 @@ router.get('/auto', authenticateToken, async (req, res) => {
       .filter(exam => {
         const examDate = new Date(exam.date);
         const isUpcoming = examDate > currentDate;
-        console.log(`- Exam: ${exam.subject} on ${examDate.toDateString()}, upcoming: ${isUpcoming}`);
         return isUpcoming;
       })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
     
-    console.log('- Upcoming exams found:', upcomingExams.length);
     
     const nextExam = upcomingExams[0];
     const daysUntilExam = nextExam 
       ? Math.ceil((new Date(nextExam.date) - currentDate) / (1000 * 60 * 60 * 24))
       : null; // No default - will handle this case separately
     
-    console.log('- Next exam:', nextExam ? `${nextExam.subject} in ${daysUntilExam} days` : 'No upcoming exams found');
 
     // Calculate overall syllabus completion
     const completedSyllabus = syllabusRecords.filter(s => s.isCompleted).length;
@@ -506,10 +568,6 @@ router.get('/auto', authenticateToken, async (req, res) => {
       ? Math.round((completedSyllabus / totalSyllabus) * 100)
       : 0;
 
-    console.log('- Syllabus completion:');
-    console.log(`  Total syllabus items: ${totalSyllabus}`);
-    console.log(`  Completed items: ${completedSyllabus}`);
-    console.log(`  Completion %: ${overallSyllabusCompletion}%`);
 
     // Calculate overall average marks from completed exams
     const completedExamsForMarks = examRecords.filter(exam => 
@@ -521,14 +579,6 @@ router.get('/auto', authenticateToken, async (req, res) => {
       ? Math.round(completedExamsForMarks.reduce((sum, exam) => sum + (exam.obtainedMarks || 0), 0) / completedExamsForMarks.length)
       : null; // No default - will handle this case separately
 
-    console.log('- Average marks calculation:');
-    console.log(`  Exams with marks: ${completedExamsForMarks.length}`);
-    if (overallAverageMarks !== null) {
-      console.log(`  Average marks: ${overallAverageMarks}%`);
-      console.log('  Sample exam marks:', completedExamsForMarks.slice(0, 3).map(e => `${e.subject}: ${e.obtainedMarks}/${e.totalMarks}`));
-    } else {
-      console.log('  No exam marks data available');
-    }
 
     // Prepare ML data for single overall prediction
     // Handle cases where no upcoming exams or no marks data exists
@@ -546,21 +596,7 @@ router.get('/auto', authenticateToken, async (req, res) => {
       user_id: userId.toString()
     };
 
-    console.log('🤖 ML Input Data Prepared:');
-    console.log('- Attendance %:', mlData.attendance_percentage);
-    console.log('- Days until exam:', daysUntilExam !== null ? `${daysUntilExam} days` : 'No upcoming exams');
-    console.log('- Exam proximity score:', mlData.exam_proximity.toFixed(3));
-    console.log('- Syllabus completion %:', mlData.syllabus_completion);
-    console.log('- Past performance %:', overallAverageMarks !== null ? `${overallAverageMarks}%` : 'No marks data');
-    console.log('- User ID:', mlData.user_id);
     
-    // Validation check (reduced logging for cleaner terminal output)
-    if (totalClasses === 0) {
-      console.log('📊 No attendance data - using defaults');
-    }
-    if (totalSyllabus === 0) {
-      console.log('📚 No syllabus data - using defaults');
-    }
 
     let prediction = null;
 

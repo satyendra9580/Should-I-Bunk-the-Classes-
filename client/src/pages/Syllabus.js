@@ -47,37 +47,23 @@ const Syllabus = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Syllabus API response:', data);
         
         // Handle backend response format: data.data.syllabus
         const syllabusList = data.data?.syllabus || data.syllabus || [];
-        console.log('Syllabus list:', syllabusList);
-        console.log('First syllabus item:', syllabusList[0]);
         setSyllabusItems(syllabusList);
         
         // Calculate stats
         const total = syllabusList?.length || 0;
         
-        // Debug: Check what completion values exist (backend uses isCompleted boolean)
-        console.log('All completion values:', syllabusList.map(item => ({ id: item._id, isCompleted: item.isCompleted, topic: item.topic })));
         
         const completed = syllabusList?.filter(item => {
-          console.log(`Checking item ${item.topic}: isCompleted = ${item.isCompleted}`);
           return item.isCompleted === true;
         }).length || 0;
-        
-        // For now, inProgress will be 0 since backend only has isCompleted boolean
-        // We'll need to add a proper status field to backend later
-        const inProgress = total - completed; // Not completed = in progress for now
+
+        const inProgress = total - completed; 
         
         const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
         
-        console.log('Syllabus statistics:', {
-          total,
-          completed,
-          inProgress,
-          percentage
-        });
         
         setStats({
           totalTopics: total,
@@ -98,7 +84,6 @@ const Syllabus = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      console.log('Submitting syllabus data:', formData);
       const response = await fetch('/api/syllabus', {
         method: 'POST',
         headers: {
@@ -139,11 +124,9 @@ const Syllabus = () => {
 
   const handleStatusUpdate = async (itemId, newStatus) => {
     try {
-      console.log('Updating status for item:', itemId, 'to:', newStatus);
       
       // Convert status to isCompleted boolean for backend
       const isCompleted = newStatus === 'completed';
-      console.log('Converting to isCompleted:', isCompleted);
       
       const response = await fetch(`/api/syllabus/${itemId}`, {
         method: 'PUT',
@@ -154,17 +137,13 @@ const Syllabus = () => {
         body: JSON.stringify({ isCompleted })
       });
 
-      console.log('Status update response:', response.status);
       
       if (response.ok) {
-        console.log('Status updated successfully, refreshing data...');
         toast.success('Status updated successfully!');
         // Force refresh the data
         await fetchSyllabusData();
-        console.log('Data refreshed after status update');
       } else {
         const errorData = await response.json();
-        console.error('Status update failed:', errorData);
         setError('Failed to update status');
         toast.error('Failed to update status');
       }

@@ -10,7 +10,7 @@ const router = express.Router();
 // @access  Private
 router.get('/', authenticateToken, validatePagination, validateDateRange, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -65,7 +65,7 @@ router.get('/', authenticateToken, validatePagination, validateDateRange, async 
 // @access  Private
 router.get('/upcoming', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const days = parseInt(req.query.days) || 30;
     
     const upcomingExams = await Exam.getUpcomingExams(userId, days);
@@ -92,7 +92,7 @@ router.get('/upcoming', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/performance', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const { semester } = req.query;
     
     const performance = await Exam.getPerformanceAnalytics(userId, semester ? parseInt(semester) : null);
@@ -120,7 +120,7 @@ router.get('/:id', authenticateToken, validateObjectId, async (req, res) => {
   try {
     const exam = await Exam.findOne({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!exam) {
@@ -153,7 +153,7 @@ router.post('/', authenticateToken, validateExam, async (req, res) => {
   try {
     const examData = {
       ...req.body,
-      userId: req.user._id
+      userId: req.user.userId
     };
 
     const exam = new Exam(examData);
@@ -196,7 +196,7 @@ router.put('/:id', authenticateToken, validateObjectId, async (req, res) => {
     });
 
     const exam = await Exam.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user._id },
+      { _id: req.params.id, userId: req.user.userId },
       updates,
       { new: true, runValidators: true }
     );
@@ -232,7 +232,7 @@ router.delete('/:id', authenticateToken, validateObjectId, async (req, res) => {
   try {
     const exam = await Exam.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!exam) {
@@ -272,7 +272,7 @@ router.post('/:id/syllabus', authenticateToken, validateObjectId, async (req, re
 
     const exam = await Exam.findOne({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!exam) {
@@ -316,7 +316,7 @@ router.put('/:id/syllabus/:topicId', authenticateToken, validateObjectId, async 
 
     const exam = await Exam.findOne({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!exam) {

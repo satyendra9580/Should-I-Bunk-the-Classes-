@@ -16,7 +16,7 @@ const upload = multer({ dest: 'uploads/' });
 // @access  Private
 router.get('/', authenticateToken, validatePagination, validateDateRange, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
     const skip = (page - 1) * limit;
@@ -69,7 +69,7 @@ router.get('/', authenticateToken, validatePagination, validateDateRange, async 
 // @access  Private
 router.get('/summary', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const { semester } = req.query;
     
     const summary = await Attendance.getAttendanceSummary(userId, semester ? parseInt(semester) : null);
@@ -95,7 +95,7 @@ router.get('/summary', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/can-bunk/:subject', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const { subject } = req.params;
     
     const result = await Attendance.canBunkNextClass(userId, subject);
@@ -121,7 +121,7 @@ router.post('/', authenticateToken, validateAttendance, async (req, res) => {
   try {
     const attendanceData = {
       ...req.body,
-      userId: req.user._id
+      userId: req.user.userId
     };
 
     const attendance = new Attendance(attendanceData);
@@ -161,7 +161,7 @@ router.post('/bulk', authenticateToken, async (req, res) => {
     // Add userId to each record
     const attendanceRecords = records.map(record => ({
       ...record,
-      userId: req.user._id
+      userId: req.user.userId
     }));
 
     const attendance = await Attendance.insertMany(attendanceRecords);
@@ -196,7 +196,6 @@ router.post('/upload-csv', authenticateToken, upload.single('csvFile'), async (r
       });
     }
 
-    console.log('CSV file uploaded:', req.file.filename, 'Size:', req.file.size);
 
     const results = [];
     const errors = [];
@@ -207,11 +206,10 @@ router.post('/upload-csv', authenticateToken, upload.single('csvFile'), async (r
       .pipe(csv())
       .on('data', (data) => {
         try {
-          console.log('Processing CSV row:', data);
           
           // Expected CSV format: subject,subjectCode,date,isPresent,classType,semester,academicYear
           const record = {
-            userId: req.user._id,
+            userId: req.user.userId,
             subject: data.subject?.trim(),
             subjectCode: data.subjectCode?.trim()?.toUpperCase(),
             date: new Date(data.date),
@@ -240,7 +238,6 @@ router.post('/upload-csv', authenticateToken, upload.single('csvFile'), async (r
         if (responseSet) return;
         
         try {
-          console.log(`CSV parsing complete. Valid records: ${results.length}, Errors: ${errors.length}`);
           
           // Clean up uploaded file
           if (fs.existsSync(req.file.path)) {
@@ -258,7 +255,6 @@ router.post('/upload-csv', authenticateToken, upload.single('csvFile'), async (r
 
           // Insert records
           const attendance = await Attendance.insertMany(results);
-          console.log(`Successfully inserted ${attendance.length} attendance records`);
 
           responseSet = true;
           res.json({
@@ -369,7 +365,7 @@ router.delete('/:id', authenticateToken, validateObjectId, async (req, res) => {
   try {
     const attendance = await Attendance.findOneAndDelete({
       _id: req.params.id,
-      userId: req.user._id
+      userId: req.user.userId
     });
 
     if (!attendance) {
@@ -398,7 +394,7 @@ router.delete('/:id', authenticateToken, validateObjectId, async (req, res) => {
 // @access  Private
 router.get('/analytics', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     const { semester } = req.query;
     
     // Get attendance summary

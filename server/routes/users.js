@@ -50,7 +50,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 
     // Update user
     const user = await User.findByIdAndUpdate(
-      req.user._id,
+      req.user.userId,
       updates,
       { new: true, runValidators: true }
     );
@@ -77,7 +77,7 @@ router.put('/profile', authenticateToken, async (req, res) => {
 // @access  Private
 router.get('/dashboard-stats', authenticateToken, async (req, res) => {
   try {
-    const userId = req.user._id;
+    const userId = req.user.userId;
     
     // Import models here to avoid circular dependency
     const Attendance = require('../models/Attendance');
@@ -325,7 +325,7 @@ router.delete('/:id', authenticateToken, requireAdmin, validateObjectId, async (
     }
 
     // Prevent admin from deleting themselves
-    if (user._id.toString() === req.user._id.toString()) {
+    if (user._id.toString() === req.user.userId.toString()) {
       return res.status(400).json({
         success: false,
         message: 'Cannot delete your own account'

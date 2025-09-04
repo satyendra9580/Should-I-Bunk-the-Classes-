@@ -5,11 +5,9 @@ const ThemeProvider = ({ children }) => {
   const { settings, applyTheme } = useSettingsStore();
 
   useEffect(() => {
-    // Apply theme on component mount
     const theme = settings?.preferences?.theme || 'dark';
     applyTheme(theme);
 
-    // Listen for system theme changes if using auto theme
     if (theme === 'auto') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handleChange = () => applyTheme('auto');

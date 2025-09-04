@@ -109,9 +109,8 @@ const validateExam = [
     .isIn(['quiz', 'midterm', 'final', 'assignment', 'project', 'viva'])
     .withMessage('Invalid exam type'),
   body('title')
-    .trim()
-    .notEmpty()
-    .withMessage('Exam title is required'),
+    .optional()
+    .trim(),
   body('date')
     .isISO8601()
     .withMessage('Please provide a valid date'),
@@ -127,9 +126,11 @@ const validateExam = [
     .isFloat({ min: 0 })
     .withMessage('Obtained marks must be a positive number'),
   body('semester')
+    .optional()
     .isInt({ min: 1, max: 8 })
     .withMessage('Semester must be between 1 and 8'),
   body('academicYear')
+    .optional()
     .matches(/^\d{4}-\d{4}$/)
     .withMessage('Academic year must be in format YYYY-YYYY'),
   handleValidationErrors

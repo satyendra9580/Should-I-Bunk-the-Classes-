@@ -1,0 +1,25 @@
+{
+  "features": {
+    "attendance_pct": "Attendance percentage (30-100%)",
+    "days_until_exam": "Days until next exam (1-60 days)",
+    "syllabus_completion": "Syllabus completion percentage (10-100%)",
+    "past_performance": "Past academic performance score (40-95%)",
+    "attendance_normalized": "Normalized attendance (0-1)",
+    "exam_urgency": "Exam urgency score (1/(days+1))",
+    "syllabus_normalized": "Normalized syllabus completion (0-1)",
+    "performance_normalized": "Normalized past performance (0-1)",
+    "attendance_syllabus_interaction": "Interaction between attendance and syllabus",
+    "exam_preparation_score": "Preparation adequacy score"
+  },
+  "target": {
+    "outcome": "Binary outcome: 1 = Safe to bunk, 0 = Not safe to bunk"
+  },
+  "generation_logic": {
+    "attendance_factor": "Higher attendance increases safety probability",
+    "exam_proximity_factor": "Closer exams decrease safety probability",
+    "syllabus_factor": "Higher completion increases safety probability",
+    "performance_factor": "Better past performance increases safety probability",
+    "interaction_effects": "Combined effects of multiple factors",
+    "noise": "Random noise added for realism"
+  }
+}

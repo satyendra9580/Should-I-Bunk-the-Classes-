@@ -12,6 +12,8 @@ const Predictions = () => {
   const [error, setError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState(null);
+  const [streamedText, setStreamedText] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
 
 
   useEffect(() => {
@@ -36,7 +38,6 @@ const Predictions = () => {
         const summary = data.data.summary || {};
         const prediction = data.data.prediction || null;
         
-        // Check if user has meaningful data
         const hasData = (summary.totalClasses > 0) || 
                        (summary.upcomingExams > 0) || 
                        (summary.syllabusProgress > 0);
@@ -45,7 +46,6 @@ const Predictions = () => {
           setPrediction(prediction);
           setSummary(summary);
         } else {
-          // Don't show prediction for users with no meaningful data
           setPrediction(null);
           setSummary(summary);
         }
@@ -69,11 +69,13 @@ const Predictions = () => {
 
   const handleEnhancedRecommendations = async () => {
     setAiLoading(true);
+    setIsStreaming(true);
     setError('');
     setAiRecommendations(null);
+    setStreamedText('');
 
     try {
-      const response = await fetch('/api/predictions/ai-recommendations', {
+      const response = await fetch('/api/predictions/ai-recommendations-stream', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -84,16 +86,50 @@ const Predictions = () => {
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('AI Recommendations Response:', data);
-        console.log('AI Recommendations Data:', data.data);
-        setAiRecommendations(data.data);
-        toast.success('Enhanced AI recommendations generated!');
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
         setError(errorData.message || 'Failed to get AI recommendations');
         toast.error('Failed to get AI recommendations');
+        setIsStreaming(false);
+        setAiLoading(false);
+        return;
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.error) {
+                throw new Error(data.error);
+              }
+              
+              if (data.content) {
+                fullText += data.content;
+                setStreamedText(fullText);
+              }
+              
+              if (data.done) {
+                setAiRecommendations({ aiRecommendation: fullText });
+                setIsStreaming(false);
+                toast.success('AI recommendations generated successfully!');
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
       }
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
@@ -101,6 +137,7 @@ const Predictions = () => {
       toast.error('Error connecting to AI service');
     } finally {
       setAiLoading(false);
+      setIsStreaming(false);
     }
   };
 
@@ -215,82 +252,162 @@ const Predictions = () => {
         </div>
       )}
 
-      {/* Overall ML Prediction */}
+      {/* ML Analysis Section */}
       {prediction ? (
         <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">🤖 ML Prediction Result</h2>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+              <span className="text-xl">🤖</span>
+            </div>
+            <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+              ML Prediction Result
+            </h2>
+          </div>
           
-          {/* Main Prediction Card */}
-          <div className={`p-8 rounded-2xl border-2 shadow-xl ${getRiskLevelColor(prediction.riskLevel)}`}>
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">{getRecommendationIcon(prediction.recommendation)}</div>
-              <h3 className="text-4xl font-bold mb-2">{prediction.recommendation}</h3>
-              <p className="text-lg opacity-80">ML Confidence: {Math.round((prediction.confidence || 0) * 100)}%</p>
+          {/* Enhanced ML Prediction Card */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-950 dark:to-gray-900 p-8 shadow-2xl border border-blue-200 dark:border-gray-700">
+            {/* Animated background effects */}
+            <div className="absolute inset-0 opacity-20 dark:opacity-30">
+              <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
+              <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000"></div>
+              <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000"></div>
             </div>
             
-            {/* Risk Level Badge */}
-            <div className="flex justify-center mb-6">
-              <span className={`px-6 py-2 rounded-full text-lg font-bold uppercase tracking-wide ${
-                prediction.riskLevel === 'high' ? 'bg-red-500 text-white' :
-                prediction.riskLevel === 'medium' ? 'bg-yellow-500 text-white' :
-                'bg-green-500 text-white'
-              }`}>
-                {prediction.riskLevel} Risk
-              </span>
-            </div>
-            
-            {/* Academic Data Grid */}
-            <div className="bg-white/30 dark:bg-black/20 rounded-xl p-6 mb-6">
-              <h4 className="text-lg font-semibold mb-4 text-center">Your Academic Data</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.totalClasses || 0}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Classes</p>
+            <div className="relative z-10">
+              {/* Main Prediction Display */}
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-28 h-28 mb-6 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full animate-pulse opacity-75"></div>
+                  <div className="relative bg-white dark:bg-gray-900 rounded-full w-24 h-24 flex items-center justify-center border-4 border-yellow-400 shadow-lg">
+                    <span className="text-6xl">{getRecommendationIcon(prediction.recommendation)}</span>
+                  </div>
                 </div>
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{summary.overallAttendancePercentage || 0}%</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Attendance Rate</p>
-                </div>
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{summary.upcomingExams || 0}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Upcoming Exams</p>
-                </div>
-                <div className="text-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                  <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{summary.syllabusProgress || 0}%</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Syllabus Done</p>
+                
+                <h3 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
+                  {prediction.recommendation}
+                </h3>
+                
+                <div className="inline-flex items-center gap-3 bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-full px-6 py-3 border border-gray-300 dark:border-gray-700 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                    <span className="text-gray-700 dark:text-gray-300 text-sm">ML Confidence</span>
+                  </div>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {Math.round((prediction.confidence || 0) * 100)}%
+                  </span>
                 </div>
               </div>
-            </div>
-            
-            {/* ML Reasoning */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              <h4 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">ML Reasoning</h4>
-              <p className="text-base leading-relaxed">{prediction.explanation}</p>
-            </div>
-            
-            {/* Confidence Bar */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Prediction Confidence</h4>
-                <span className="font-bold">{Math.round((prediction.confidence || 0) * 100)}%</span>
+
+              {/* Risk Level Badge */}
+              <div className="flex justify-center mb-8">
+                <div className="relative group">
+                  <div className={`absolute inset-0 rounded-2xl blur-2xl opacity-75 group-hover:opacity-100 transition-opacity ${
+                    prediction.riskLevel === 'high' ? 'bg-red-500' :
+                    prediction.riskLevel === 'medium' ? 'bg-yellow-500' :
+                    'bg-green-500'
+                  }`}></div>
+                  <div className={`relative px-8 py-4 rounded-2xl font-bold text-lg uppercase tracking-wider border-2 ${
+                    prediction.riskLevel === 'high' ? 
+                      'bg-gradient-to-r from-red-600 to-red-500 border-red-400 text-white' :
+                    prediction.riskLevel === 'medium' ? 
+                      'bg-gradient-to-r from-yellow-600 to-yellow-500 border-yellow-400 text-gray-900' :
+                      'bg-gradient-to-r from-green-600 to-green-500 border-green-400 text-white'
+                  }`}>
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">
+                        {prediction.riskLevel === 'high' ? '🔴' : prediction.riskLevel === 'medium' ? '🟡' : '🟢'}
+                      </span>
+                      <span>{prediction.riskLevel} Risk</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <div className="w-full bg-white/30 dark:bg-black/20 rounded-full h-4">
-                <div 
-                  className="bg-current h-4 rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(100, Math.max(0, (prediction.confidence || 0) * 100))}%` }}
-                ></div>
+
+              {/* Academic Metrics Grid */}
+              <div className="bg-white/70 dark:bg-gray-800/50 backdrop-blur-md rounded-2xl p-6 mb-8 border border-gray-200 dark:border-gray-700 shadow-sm">
+                <h4 className="text-xl font-bold mb-6 text-center text-gray-900 dark:text-white flex items-center justify-center gap-3">
+                  <span className="text-2xl">📊</span>
+                  Your Academic Metrics
+                </h4>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="group hover:scale-105 transition-all duration-300 cursor-pointer">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-600/20 dark:to-blue-700/20 backdrop-blur-sm rounded-xl p-5 border border-blue-300 dark:border-blue-500/30 hover:border-blue-400 dark:hover:border-blue-400/50 shadow-sm">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-blue-400 rounded-full filter blur-3xl opacity-20"></div>
+                      <div className="relative">
+                        <div className="text-3xl mb-2">📚</div>
+                        <p className="text-3xl font-bold text-blue-600 dark:text-blue-400 mb-1">{summary.totalClasses || 0}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Classes</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="group hover:scale-105 transition-all duration-300 cursor-pointer">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-green-100 to-green-200 dark:from-green-600/20 dark:to-green-700/20 backdrop-blur-sm rounded-xl p-5 border border-green-300 dark:border-green-500/30 hover:border-green-400 dark:hover:border-green-400/50 shadow-sm">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-green-400 rounded-full filter blur-3xl opacity-20"></div>
+                      <div className="relative">
+                        <div className="text-3xl mb-2">✅</div>
+                        <p className="text-3xl font-bold text-green-600 dark:text-green-400 mb-1">{summary.overallAttendancePercentage || 0}%</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Attendance</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="group hover:scale-105 transition-all duration-300 cursor-pointer">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-600/20 dark:to-purple-700/20 backdrop-blur-sm rounded-xl p-5 border border-purple-300 dark:border-purple-500/30 hover:border-purple-400 dark:hover:border-purple-400/50 shadow-sm">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-purple-400 rounded-full filter blur-3xl opacity-20"></div>
+                      <div className="relative">
+                        <div className="text-3xl mb-2">📝</div>
+                        <p className="text-3xl font-bold text-purple-600 dark:text-purple-400 mb-1">{summary.upcomingExams || 0}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Upcoming</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="group hover:scale-105 transition-all duration-300 cursor-pointer">
+                    <div className="relative overflow-hidden bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-600/20 dark:to-orange-700/20 backdrop-blur-sm rounded-xl p-5 border border-orange-300 dark:border-orange-500/30 hover:border-orange-400 dark:hover:border-orange-400/50 shadow-sm">
+                      <div className="absolute top-0 right-0 w-20 h-20 bg-orange-400 rounded-full filter blur-3xl opacity-20"></div>
+                      <div className="relative">
+                        <div className="text-3xl mb-2">🎯</div>
+                        <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mb-1">{summary.syllabusProgress || 0}%</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Syllabus</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-            
-            {/* AI Advice Button */}
-            <div className="text-center">
-              <button
-                onClick={() => handleEnhancedRecommendations(prediction)}
-                className="inline-flex items-center space-x-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white px-8 py-4 rounded-xl text-lg font-semibold transition-all duration-300 hover:shadow-2xl transform hover:scale-105"
-              >
-                <span>✨</span>
-                <span>Get Enhanced AI Advice</span>
-              </button>
+
+              {/* Detailed Explanation */}
+              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-8 rounded-xl shadow-lg border border-indigo-200 dark:border-indigo-700">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                    <span className="text-2xl">🧠</span>
+                  </div>
+                  <h4 className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">
+                    Detailed Explanation
+                  </h4>
+                </div>
+                <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                  {prediction.explanation}
+                </p>
+              </div>
+              
+              {/* AI Recommendation Button */}
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={() => handleEnhancedRecommendations()}
+                  disabled={aiLoading}
+                  className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold rounded-2xl shadow-2xl hover:shadow-3xl transform hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3 text-lg"
+                >
+                  {aiLoading ? (
+                    <>
+                      <span className="animate-spin text-2xl">⚡</span>
+                      <span>Generating AI Insights...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-2xl">✨</span>
+                      <span>Get Personalized AI Recommendations</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -358,32 +475,41 @@ const Predictions = () => {
       {/* Enhanced AI Recommendations */}
       {aiRecommendations && (
         <div className="mt-6">
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-2xl border border-purple-200 dark:border-purple-800 p-8">
-            <div className="flex items-center mb-6">
-              <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl">
-                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center shadow-md">
+                <span className="text-xl">✨</span>
               </div>
-              <div className="ml-4">
-                <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-100">✨ Enhanced AI Recommendations</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Personalized advice powered by Google Gemini 1.5 Flash</p>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+                AI Recommendations
+              </h2>
+            </div>
+
+            <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-3xl border-2 border-indigo-200 dark:border-indigo-700 p-8 shadow-xl">
+              {isStreaming && (
+                <div className="mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="flex gap-1">
+                      <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-3 h-3 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                    <span className="text-sm text-gray-600 dark:text-gray-400 italic">AI is analyzing your academic data...</span>
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-white/50 dark:border-gray-700/50">
+                <div className="prose prose-lg dark:prose-invert max-w-none">
+                  <div className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">
+                    {isStreaming ? streamedText : (aiRecommendations?.aiRecommendation || aiRecommendations?.fallbackRecommendation)}
+                    {isStreaming && streamedText && (
+                      <span className="inline-block w-4 h-5 ml-1 bg-gray-600 dark:bg-gray-400 animate-pulse"></span>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
-            
-            <div className="prose dark:prose-invert max-w-none">
-              <div className="whitespace-pre-wrap text-gray-700 dark:text-gray-300 text-lg leading-relaxed">
-                {aiRecommendations.aiRecommendation || aiRecommendations.fallbackRecommendation}
-              </div>
-            </div>
-            
-            {aiRecommendations.metadata && (
-              <div className="mt-6 pt-4 border-t border-purple-200 dark:border-purple-800">
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Generated at {formatDate(aiRecommendations.metadata.timestamp)}
-                </p>
-              </div>
-            )}
           </div>
         </div>
       )}

@@ -24,8 +24,10 @@ const examSchema = new mongoose.Schema({
   },
   title: {
     type: String,
-    required: [true, 'Exam title is required'],
-    trim: true
+    trim: true,
+    default: function() {
+      return `${this.examType.charAt(0).toUpperCase() + this.examType.slice(1)} - ${this.subject}`;
+    }
   },
   date: {
     type: Date,
@@ -43,6 +45,7 @@ const examSchema = new mongoose.Schema({
   obtainedMarks: {
     type: Number,
     min: 0,
+    default: null,
     validate: {
       validator: function(v) {
         return v == null || v <= this.totalMarks;
@@ -90,13 +93,16 @@ const examSchema = new mongoose.Schema({
   },
   semester: {
     type: Number,
-    required: true,
     min: 1,
-    max: 8
+    max: 8,
+    default: 1
   },
   academicYear: {
     type: String,
-    required: true
+    default: function() {
+      const currentYear = new Date().getFullYear();
+      return `${currentYear}-${currentYear + 1}`;
+    }
   },
   isImportant: {
     type: Boolean,

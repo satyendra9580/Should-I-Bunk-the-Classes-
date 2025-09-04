@@ -11,7 +11,8 @@ const userRoutes = require('./routes/users');
 const attendanceRoutes = require('./routes/attendance');
 const examRoutes = require('./routes/exams');
 const syllabusRoutes = require('./routes/syllabus');
-const predictionRoutes = require('./routes/predictions');
+const predictionsRoutes = require('./routes/predictions');
+const mlTrainingRoutes = require('./routes/ml-training');
 
 const app = express();
 
@@ -45,7 +46,7 @@ mongoose.connect(process.env.MONGO_URL, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => console.log('✅ MongoDB connected successfully'))
+.then(() => {})
 .catch(err => {
   console.error('❌ MongoDB connection error:', err);
   process.exit(1);
@@ -66,8 +67,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/exams', examRoutes);
 app.use('/api/syllabus', syllabusRoutes);
-app.use('/api/predict', predictionRoutes);
-app.use('/api/predictions', predictionRoutes);
+app.use('/api/predict', predictionsRoutes);
+app.use('/api/predictions', predictionsRoutes);
+app.use('/api/ml', mlTrainingRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -107,9 +109,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5004;
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📊 Environment: ${process.env.NODE_ENV}`);
-  console.log(`🔗 ML Service URL: ${process.env.ML_SERVICE_URL}`);
+  // Server started successfully
 });
 
 module.exports = app;

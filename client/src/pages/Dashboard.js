@@ -33,19 +33,19 @@ const Dashboard = () => {
       const token = localStorage.getItem('token');
       
       const [attendanceRes, examRes, syllabusRes, predictionRes] = await Promise.all([
-        axios.get('/attendance', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
+        axios.get('/api/attendance', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
           console.error('Attendance API error:', err.response?.data || err.message);
           return { data: { data: [] } };
         }),
-        axios.get('/exams', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
+        axios.get('/api/exams', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
           console.error('Exams API error:', err.response?.data || err.message);
           return { data: { data: [] } };
         }),
-        axios.get('/syllabus', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
+        axios.get('/api/syllabus', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
           console.error('Syllabus API error:', err.response?.data || err.message);
           return { data: { data: [] } };
         }),
-        axios.get('/predictions/auto', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
+        axios.get('/api/predictions/auto', { headers: { Authorization: `Bearer ${token}` } }).catch(err => {
           console.error('Predictions API error:', err.response?.data || err.message);
           return { data: { data: null } };
         })

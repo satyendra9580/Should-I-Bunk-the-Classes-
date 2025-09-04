@@ -23,7 +23,7 @@ const useAuthStore = create(
             axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
             
             // Verify token and get user data
-            const response = await axios.get('/auth/me');
+            const response = await axios.get('/api/auth/me');
             
             set({
               user: response.data.data.user,

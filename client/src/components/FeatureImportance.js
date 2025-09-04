@@ -20,7 +20,7 @@ const FeatureImportance = () => {
         return;
       }
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5004/api'}/ml/feature-importance`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com/api'}/ml/feature-importance`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

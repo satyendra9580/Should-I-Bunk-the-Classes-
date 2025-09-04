@@ -4,7 +4,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 
 // Configure axios defaults
-axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'http://localhost:5004/api';
+axios.defaults.baseURL = process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com/api';
 
 const useAuthStore = create(
   persist(

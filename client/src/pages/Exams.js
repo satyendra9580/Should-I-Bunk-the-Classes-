@@ -35,7 +35,8 @@ const Exams = () => {
         }
       });
 
-      setExams(response.data.exams || []);
+      const examsData = response.data.exams || response.data.data?.exams || [];
+      setExams(examsData);
     } catch (err) {
       setError('Error loading exams');
     } finally {

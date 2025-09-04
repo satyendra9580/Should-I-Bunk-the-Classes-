@@ -68,7 +68,12 @@ const Syllabus = () => {
         completionPercentage
       });
     } catch (err) {
-      setError('Error loading syllabus data');
+      console.error('Error loading syllabus data:', err);
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || 'Error loading syllabus data');
+      } else {
+        setError('Error loading syllabus data');
+      }
     } finally {
       setLoading(false);
     }

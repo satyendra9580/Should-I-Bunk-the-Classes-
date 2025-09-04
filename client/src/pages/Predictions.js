@@ -34,21 +34,38 @@ const Predictions = () => {
         }
       });
 
-      setPrediction(response.data.prediction);
-      setSummary(response.data.summary);
-      const hasData = (response.data.summary.totalClasses > 0) || 
-                       (response.data.summary.upcomingExams > 0) || 
-                       (response.data.summary.syllabusProgress > 0);
+      const predictionData = response.data.prediction;
+      const summaryData = response.data.summary || {};
+      
+      setPrediction(predictionData);
+      setSummary(summaryData);
+      
+      const hasData = (summaryData.totalClasses > 0) || 
+                       (summaryData.upcomingExams > 0) || 
+                       (summaryData.syllabusProgress > 0);
         
-        if (response.data.prediction && hasData) {
-          setPrediction(response.data.prediction);
-        } else {
-          setPrediction(null);
-          setSummary(response.data.summary);
-        }
+      if (predictionData && hasData) {
+        setPrediction(predictionData);
+      } else {
+        setPrediction(null);
+        setSummary(summaryData);
+      }
     } catch (err) {
       console.error('Error fetching auto predictions:', err);
-      setError('Error connecting to prediction service. Please try again.');
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || 'Error connecting to prediction service. Please try again.');
+      } else if (err.code === 'NETWORK_ERROR') {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError('Error connecting to prediction service. Please try again.');
+      }
+      // Set empty data to prevent undefined errors
+      setPrediction(null);
+      setSummary({
+        totalClasses: 0,
+        upcomingExams: 0,
+        syllabusProgress: 0
+      });
     } finally {
       setLoading(false);
     }

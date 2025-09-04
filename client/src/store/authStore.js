@@ -49,7 +49,7 @@ const useAuthStore = create(
       login: async (email, password) => {
         set({ isLoading: true });
         try {
-          const response = await axios.post('/auth/login', {
+          const response = await axios.post('/api/auth/login', {
             email,
             password,
           });
@@ -82,7 +82,7 @@ const useAuthStore = create(
       register: async (userData) => {
         set({ isLoading: true });
         try {
-          const response = await axios.post('/auth/register', userData);
+          const response = await axios.post('/api/auth/register', userData);
 
           const { user, token } = response.data.data;
 

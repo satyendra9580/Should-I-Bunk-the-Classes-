@@ -107,9 +107,9 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5004;
-
 app.listen(PORT, () => {
   // Server started successfully
 });
 
 module.exports = app;
+

@@ -134,7 +134,6 @@ CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
 6. Deploy!
 
 ---
-
 ## 🌐 Step 5: Deploy Frontend (Vercel)
 
 ### 5.1 Create vercel.json

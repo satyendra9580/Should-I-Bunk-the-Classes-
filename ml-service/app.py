@@ -381,7 +381,7 @@ if __name__ == '__main__':
     # Initialize the predictor on startup
     startup()
     
-    port = int(os.getenv('PORT', 5000))
+    port = int(os.getenv('PORT', 5003))
     debug = os.getenv('FLASK_ENV') == 'development'
     
     logger.info(f"Starting ML Service on port {port}")

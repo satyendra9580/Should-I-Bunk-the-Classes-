@@ -32,12 +32,11 @@ const FeatureImportance = () => {
       if (response.ok) {
         const data = await response.json();
         
-        if (data.success && data.data) {
-          setFeatureData(data.data);
+        if (response.data.success && response.data.data) {
+          setFeatureData(response.data.data);
           setError('');
         } else {
-          console.error('❌ Unexpected data structure:', data);
-          setError('Received invalid data format from server');
+          setError('No feature importance data available');
         }
       } else {
         const errorText = await response.text();

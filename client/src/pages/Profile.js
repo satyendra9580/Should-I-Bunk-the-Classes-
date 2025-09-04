@@ -100,15 +100,10 @@ const Profile = () => {
         }
       });
 
-      if (response.status === 200) {
-        setSuccess('Password changed successfully!');
-        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        setShowPasswordForm(false);
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to change password');
-      }
+      setSuccess('Password changed successfully!');
+      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setShowPasswordForm(false);
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Error changing password:', err);
       if (err.response && err.response.data) {

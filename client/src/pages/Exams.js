@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../lib/utils';
+import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const Exams = () => {
   const { user, token } = useAuthStore();
@@ -68,33 +69,21 @@ const Exams = () => {
         }
       });
 
-      if (response.ok) {
-        toast.success('Exam added successfully!');
-        setShowAddForm(false);
-        setFormData({
-          subject: '',
-          subjectCode: '',
-          examType: 'midterm',
-          date: '',
-          duration: 180,
-          totalMarks: 100,
-          syllabusTopics: '',
-          notes: ''
-        });
-        fetchExams();
-      } else {
-        const errorData = await response.json();
-        console.error('Exam validation error:', errorData);
-        setError(errorData.message || 'Failed to add exam');
-        // Show detailed validation errors if available
-        if (errorData.errors) {
-          const errorMessages = errorData.errors.map(err => `${err.field}: ${err.message}`).join(', ');
-          setError(`Validation failed: ${errorMessages}`);
-          toast.error(`Validation failed: ${errorMessages}`);
-        } else {
-          toast.error(errorData.message || 'Failed to add exam');
-        }
-      }
+      toast.success('Exam added successfully!');
+      setShowAddForm(false);
+      setFormData({
+        subject: '',
+        subjectCode: '',
+        examType: 'midterm',
+        date: '',
+        time: '',
+        duration: 180,
+        totalMarks: 100,
+        syllabus: '',
+        venue: '',
+        instructions: ''
+      });
+      fetchExams();
     } catch (err) {
       setError('Error adding exam');
     }
@@ -112,12 +101,8 @@ const Exams = () => {
         }
       });
 
-      if (response.ok) {
-        toast.success('Exam deleted successfully!');
-        fetchExams();
-      } else {
-        setError('Failed to delete exam');
-      }
+      toast.success('Exam deleted successfully!');
+      fetchExams();
     } catch (err) {
       setError('Error deleting exam');
     }

@@ -55,15 +55,8 @@ const Attendance = () => {
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setAttendanceRecords(data.data.attendance || []);
-        calculateStats(data.data.attendance || []);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to fetch attendance data');
-        toast.error('Failed to load attendance data');
-      }
+      setAttendanceRecords(response.data.data.attendance || []);
+      calculateStats(response.data.data.attendance || []);
     } catch (err) {
       console.error('Error fetching attendance:', err);
       setError('Error loading attendance data');
@@ -178,16 +171,10 @@ const Attendance = () => {
         }
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        toast.success(`Successfully uploaded ${result.data.imported} records!`);
-        setShowUploadForm(false);
-        setCsvFile(null);
-        fetchAttendanceData();
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to upload CSV');
-      }
+      toast.success(`Successfully uploaded ${response.data.data.imported} records!`);
+      setShowUploadForm(false);
+      setCsvFile(null);
+      fetchAttendanceData();
     } catch (err) {
       console.error('Error uploading CSV:', err);
       toast.error('Error uploading CSV file');
@@ -209,13 +196,8 @@ const Attendance = () => {
         }
       });
 
-      if (response.ok) {
-        toast.success('Attendance record deleted successfully!');
-        fetchAttendanceData();
-      } else {
-        const errorData = await response.json();
-        toast.error(errorData.message || 'Failed to delete attendance record');
-      }
+      toast.success('Attendance record deleted successfully!');
+      fetchAttendanceData();
     } catch (err) {
       console.error('Error deleting attendance:', err);
       toast.error('Error deleting attendance record');

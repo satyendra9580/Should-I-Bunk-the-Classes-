@@ -123,15 +123,9 @@ const Syllabus = () => {
       });
 
       
-      if (response.ok) {
-        toast.success('Status updated successfully!');
-        // Force refresh the data
-        await fetchSyllabusData();
-      } else {
-        const errorData = await response.json();
-        setError('Failed to update status');
-        toast.error('Failed to update status');
-      }
+      toast.success('Status updated successfully!');
+      // Force refresh the data
+      await fetchSyllabusData();
     } catch (err) {
       console.error('Error updating status:', err);
       setError('Error updating status');

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { formatDate } from '../lib/utils';
@@ -50,30 +51,23 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-
-      const response = await fetch('/api/auth/profile', {
-        method: 'PUT',
+      const response = await axios.put('/api/auth/profile', formData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+          'Authorization': `Bearer ${token}`
+        }
       });
 
-
-      if (response.ok) {
-        const data = await response.json();
-        useAuthStore.setState({ user: data.user });
-        setSuccess('Profile updated successfully!');
-        setIsEditing(false);
-        setTimeout(() => setSuccess(''), 3000);
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to update profile');
-      }
+      updateProfile(response.data.user);
+      setSuccess('Profile updated successfully!');
+      setIsEditing(false);
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Profile update error:', err);
-      setError('Error updating profile: ' + err.message);
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || 'Failed to update profile');
+      } else {
+        setError('Error updating profile');
+      }
     } finally {
       setLoading(false);
     }
@@ -97,19 +91,16 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      const response = await fetch('/api/auth/change-password', {
-        method: 'PUT',
+      const response = await axios.put('/api/auth/change-password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        })
+          'Authorization': `Bearer ${token}`
+        }
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setSuccess('Password changed successfully!');
         setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
         setShowPasswordForm(false);
@@ -119,7 +110,12 @@ const Profile = () => {
         setError(errorData.message || 'Failed to change password');
       }
     } catch (err) {
-      setError('Error changing password');
+      console.error('Error changing password:', err);
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || 'Failed to change password');
+      } else {
+        setError('Error changing password');
+      }
     } finally {
       setLoading(false);
     }

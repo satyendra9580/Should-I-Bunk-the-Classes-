@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { formatDate, getAttendanceColor } from '../lib/utils';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const Attendance = () => {
   const { user, token } = useAuthStore();
@@ -48,10 +49,9 @@ const Attendance = () => {
       setLoading(true);
       setError('');
       
-      const response = await fetch('/api/attendance', {
+      const response = await axios.get('/api/attendance', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
 
@@ -119,40 +119,40 @@ const Attendance = () => {
     setError('');
 
     try {
-      const response = await fetch('/api/attendance', {
-        method: 'POST',
+      const response = await axios.post('/api/attendance', {
+        subject: formData.subject,
+        date: formData.date,
+        status: formData.isPresent,
+        notes: formData.notes
+      }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+          'Authorization': `Bearer ${token}`
+        }
       });
-
-      if (response.ok) {
-        toast.success('Attendance record added successfully!');
-        setShowAddForm(false);
-        setFormData({
-          subject: '',
-          subjectCode: '',
-          date: new Date().toISOString().split('T')[0],
-          isPresent: true,
-          classType: 'lecture',
-          duration: 60,
-          topic: '',
-          notes: '',
-          semester: 1,
-          academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
-        });
-        fetchAttendanceData();
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to add attendance record');
-        toast.error(errorData.message || 'Failed to add attendance record');
-      }
+      toast.success('Attendance record added successfully!');
+      setShowAddForm(false);
+      setFormData({
+        subject: '',
+        subjectCode: '',
+        date: new Date().toISOString().split('T')[0],
+        isPresent: true,
+        classType: 'lecture',
+        duration: 60,
+        topic: '',
+        notes: '',
+        semester: 1,
+        academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`
+      });
+      fetchAttendanceData();
     } catch (err) {
       console.error('Error adding attendance:', err);
-      setError('Error adding attendance record');
-      toast.error('Error adding attendance record');
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || 'Failed to add attendance record');
+        toast.error(err.response.data.message || 'Failed to add attendance record');
+      } else {
+        setError('Error adding attendance record');
+        toast.error('Error adding attendance record');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -172,12 +172,10 @@ const Attendance = () => {
     formData.append('csvFile', csvFile);
 
     try {
-      const response = await fetch('/api/attendance/upload-csv', {
-        method: 'POST',
+      const response = await axios.post('/api/attendance/upload-csv', formData, {
         headers: {
           'Authorization': `Bearer ${token}`
-        },
-        body: formData
+        }
       });
 
       if (response.ok) {
@@ -205,8 +203,7 @@ const Attendance = () => {
     }
 
     try {
-      const response = await fetch(`/api/attendance/${recordId}`, {
-        method: 'DELETE',
+      const response = await axios.delete(`/api/attendance/${recordId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

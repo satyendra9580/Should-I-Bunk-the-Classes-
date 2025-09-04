@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/authStore';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { formatDate } from '../lib/utils';
 import toast from 'react-hot-toast';
+import axios from 'axios';
 
 const Syllabus = () => {
   const { user, token } = useAuthStore();
@@ -38,42 +39,34 @@ const Syllabus = () => {
   const fetchSyllabusData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/syllabus', {
+      const response = await axios.get('/api/syllabus', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        
-        // Handle backend response format: data.data.syllabus
-        const syllabusList = data.data?.syllabus || data.syllabus || [];
-        setSyllabusItems(syllabusList);
-        
-        // Calculate stats
-        const total = syllabusList?.length || 0;
-        
-        
-        const completed = syllabusList?.filter(item => {
-          return item.isCompleted === true;
-        }).length || 0;
+      // Axios automatically parses JSON and throws on error status
+      const data = response.data;
+      
+      // Handle backend response format: data.data.syllabus
+      const syllabusList = data.data?.syllabus || data.syllabus || [];
+      setSyllabusItems(syllabusList);
+      
+      // Calculate stats
+      const total = syllabusList?.length || 0;
+      const completed = syllabusList?.filter(item => {
+        return item.isCompleted === true;
+      }).length || 0;
 
-        const inProgress = total - completed; 
-        
-        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-        
-        
-        setStats({
-          totalTopics: total,
-          completedTopics: completed,
-          inProgressTopics: inProgress,
-          completionPercentage: percentage
-        });
-      } else {
-        setError('Failed to fetch syllabus data');
-      }
+      const inProgress = total - completed; 
+      const completionPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+      setSyllabusStats({
+        total,
+        completed,
+        inProgress,
+        completionPercentage
+      });
     } catch (err) {
       setError('Error loading syllabus data');
     } finally {
@@ -84,41 +77,34 @@ const Syllabus = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('/api/syllabus', {
-        method: 'POST',
+      const response = await axios.post('/api/syllabus', {
+        subject: formData.subject,
+        topic: formData.topic,
+        priority: formData.priority
+      }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+          'Authorization': `Bearer ${token}`
+        }
       });
-
-      if (response.ok) {
-        setShowAddForm(false);
-        setFormData({
-          subject: '',
-          subjectCode: '',
-          topic: '',
-          description: '',
-          difficulty: 'medium',
-          priority: 'medium',
-          estimatedHours: 2,
-          semester: 1,
-          academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
-          weightage: 5,
-          dueDate: '',
-          status: 'not_started'
-        });
-        fetchSyllabusData();
-      } else {
-        const errorData = await response.json();
-        console.error('Syllabus validation error:', errorData);
-        console.error('Response status:', response.status);
-        setError(errorData.message || errorData.error || 'Failed to add syllabus item');
-        toast.error(errorData.message || errorData.error || 'Validation failed');
-      }
+      setShowAddForm(false);
+      setFormData({
+        subject: '',
+        subjectCode: '',
+        topic: '',
+        description: '',
+        difficulty: 'medium',
+        priority: 'medium',
+        estimatedHours: 2,
+        semester: 1,
+        academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+        weightage: 5,
+        dueDate: '',
+        status: 'not_started'
+      });
+      fetchSyllabusData();
     } catch (err) {
       setError('Error adding syllabus item');
+      toast.error('Failed to add syllabus item');
     }
   };
 
@@ -128,13 +114,12 @@ const Syllabus = () => {
       // Convert status to isCompleted boolean for backend
       const isCompleted = newStatus === 'completed';
       
-      const response = await fetch(`/api/syllabus/${itemId}`, {
-        method: 'PUT',
+      const response = await axios.put(`/api/syllabus/${itemId}`, {
+        isCompleted
+      }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ isCompleted })
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       
@@ -160,8 +145,7 @@ const Syllabus = () => {
     }
 
     try {
-      const response = await fetch(`/api/syllabus/${itemId}`, {
-        method: 'DELETE',
+      const response = await axios.delete(`/api/syllabus/${itemId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

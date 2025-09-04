@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 import { toast } from 'react-hot-toast';
 
@@ -27,32 +28,24 @@ const Predictions = () => {
     setError('');
     
     try {
-      const response = await fetch('/api/predictions/auto', {
+      const response = await axios.get('/api/predictions/auto', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const summary = data.data.summary || {};
-        const prediction = data.data.prediction || null;
+
+      setPrediction(response.data.prediction);
+      setSummary(response.data.summary);
+      const hasData = (response.data.summary.totalClasses > 0) || 
+                       (response.data.summary.upcomingExams > 0) || 
+                       (response.data.summary.syllabusProgress > 0);
         
-        const hasData = (summary.totalClasses > 0) || 
-                       (summary.upcomingExams > 0) || 
-                       (summary.syllabusProgress > 0);
-        
-        if (prediction && hasData) {
-          setPrediction(prediction);
-          setSummary(summary);
+        if (response.data.prediction && hasData) {
+          setPrediction(response.data.prediction);
         } else {
           setPrediction(null);
-          setSummary(summary);
+          setSummary(response.data.summary);
         }
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to fetch predictions');
-      }
     } catch (err) {
       console.error('Error fetching auto predictions:', err);
       setError('Error connecting to prediction service. Please try again.');
@@ -75,27 +68,20 @@ const Predictions = () => {
     setStreamedText('');
 
     try {
-      const response = await fetch('/api/predictions/ai-recommendations-stream', {
-        method: 'POST',
+      const response = await axios.post('/api/predictions/ai-recommendations-stream', {
+        attendanceData: summary?.attendanceData,
+        examData: summary?.examData,
+        syllabusData: summary?.syllabusData,
+        prediction: prediction
+      }, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          prediction: prediction
-        })
+        responseType: 'stream'
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to get AI recommendations');
-        toast.error('Failed to get AI recommendations');
-        setIsStreaming(false);
-        setAiLoading(false);
-        return;
-      }
-
-      const reader = response.body.getReader();
+      const reader = response.data.getReader();
       const decoder = new TextDecoder();
       let fullText = '';
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
-import useSettingsStore from '../store/settingsStore';
+import { toast } from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const Settings = () => {
@@ -36,6 +38,8 @@ const Settings = () => {
     }
   });
 
+  const navigate = useNavigate();
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -50,21 +54,26 @@ const Settings = () => {
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/auth/settings', {
+      const response = await axios.get('/api/auth/settings', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
-        const data = await response.json();
+        const data = response.data;
         if (data.settings) {
-          // Use the method that doesn't trigger theme changes when fetching
-          updateSettingsWithoutThemeChange(data.settings);
+          setLocalSettings(data.settings);
+          updateAllSettings(response.data.settings || {});
         }
       }
     } catch (err) {
+      console.error('Error loading settings:', err);
+      if (err.response && err.response.data) {
+        setError(err.response.data.message || 'Failed to load settings');
+      } else {
+        setError('Error loading settings');
+      }
     } finally {
       setLoading(false);
     }
@@ -76,21 +85,18 @@ const Settings = () => {
       setError('');
       setSuccess('');
 
-      const response = await fetch('/api/auth/settings', {
-        method: 'PUT',
+      const response = await axios.put('/api/auth/settings', localSettings, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ settings })
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
-        setSuccess('Settings saved successfully!');
+        toast.success('Settings updated successfully!');
+        setSuccess('Settings updated successfully!');
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to save settings');
+        setError('Error saving settings');
       }
     } catch (err) {
       setError('Error saving settings');
@@ -104,22 +110,18 @@ const Settings = () => {
       setLoading(true);
       setError('');
 
-      const response = await fetch('/api/auth/account', {
-        method: 'DELETE',
+      const response = await axios.delete('/api/auth/account', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ password: deletePassword })
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
-        alert('Account deleted successfully. You will be logged out.');
-        await logout();
-        window.location.href = '/login';
+        toast.success('Account deleted successfully');
+        logout();
+        navigate('/login');
       } else {
-        const errorData = await response.json();
-        setError(errorData.message || 'Failed to delete account');
+        setError('Error deleting account');
       }
     } catch (err) {
       setError('Error deleting account');

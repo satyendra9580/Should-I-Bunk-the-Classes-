@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
-import LoadingSpinner from '../components/ui/LoadingSpinner';
+import { toast } from 'react-hot-toast';
 import { formatDate } from '../lib/utils';
-import toast from 'react-hot-toast';
 
 const Exams = () => {
   const { user, token } = useAuthStore();
@@ -28,21 +28,13 @@ const Exams = () => {
   const fetchExams = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/exams', {
+      const response = await axios.get('/api/exams', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${token}`
         }
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        // Handle both possible response formats
-        const examsList = data.data?.exams || data.exams || [];
-        setExams(examsList);
-      } else {
-        setError('Failed to fetch exams');
-      }
+      setExams(response.data.exams || []);
     } catch (err) {
       setError('Error loading exams');
     } finally {
@@ -70,13 +62,10 @@ const Exams = () => {
       }
 
 
-      const response = await fetch('/api/exams', {
-        method: 'POST',
+      const response = await axios.post('/api/exams', examData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(examData)
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (response.ok) {
@@ -117,14 +106,14 @@ const Exams = () => {
     }
 
     try {
-      const response = await fetch(`/api/exams/${examId}`, {
-        method: 'DELETE',
+      const response = await axios.delete(`/api/exams/${examId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       if (response.ok) {
+        toast.success('Exam deleted successfully!');
         fetchExams();
       } else {
         setError('Failed to delete exam');

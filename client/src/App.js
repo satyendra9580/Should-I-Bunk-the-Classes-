@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuthStore } from './store/authStore';
+import useThemeStore from './store/themeStore';
 import ThemeProvider from './components/ThemeProvider';
 
 // Components
@@ -85,10 +86,12 @@ const Layout = ({ children }) => {
 
 function App() {
   const { initializeAuth } = useAuthStore();
+  const { initializeTheme } = useThemeStore();
   
   React.useEffect(() => {
     initializeAuth();
-  }, [initializeAuth]);
+    initializeTheme();
+  }, [initializeAuth, initializeTheme]);
   
   return (
     <ThemeProvider>

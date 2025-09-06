@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import useThemeStore from '../store/themeStore';
 import { toast } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 
 const Settings = () => {
   const { user, token, logout } = useAuthStore();
+  const { theme, language, timezone, dateFormat, setTheme, setLanguage, setTimezone, setDateFormat, updateSettings } = useThemeStore();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -20,10 +22,10 @@ const Settings = () => {
       weeklyReports: false
     },
     preferences: {
-      theme: 'dark',
-      language: 'en',
-      timezone: 'UTC',
-      dateFormat: 'MM/DD/YYYY'
+      theme: theme,
+      language: language,
+      timezone: timezone,
+      dateFormat: dateFormat
     },
     privacy: {
       profileVisibility: 'private',
@@ -32,8 +34,9 @@ const Settings = () => {
     },
     academic: {
       defaultAttendanceGoal: 75,
-      reminderDaysBefore: 3,
-      autoCalculateGPA: true
+      semesterStartDate: '',
+      currentSemester: 1,
+      currentAcademicYear: '2024-2025'
     }
   });
 
@@ -43,24 +46,44 @@ const Settings = () => {
     fetchSettings();
   }, []);
 
+  // Update local settings when theme store changes
+  useEffect(() => {
+    setLocalSettings(prev => ({
+      ...prev,
+      preferences: {
+        ...prev.preferences,
+        theme: theme,
+        language: language,
+        timezone: timezone,
+        dateFormat: dateFormat
+      }
+    }));
+  }, [theme, language, timezone, dateFormat]);
+
 
   const fetchSettings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/auth/settings', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/auth/settings`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      setLocalSettings(response.data.settings || {});
+      const serverSettings = response.data.settings || {};
+      setLocalSettings(prev => ({
+        ...prev,
+        ...serverSettings
+      }));
+      
+      // Update theme store with server preferences
+      if (serverSettings.preferences) {
+        updateSettings(serverSettings);
+      }
     } catch (err) {
       console.error('Error loading settings:', err);
-      if (err.response && err.response.data) {
-        setError(err.response.data.message || 'Failed to load settings');
-      } else {
-        setError('Error loading settings');
-      }
+      const errorMessage = err.response?.data?.message || 'Failed to load settings';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -72,21 +95,31 @@ const Settings = () => {
       setError('');
       setSuccess('');
 
-      const response = await axios.put('/api/auth/settings', localSettings, {
+      const response = await axios.put(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/auth/settings`, {
+        settings: localSettings
+      }, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      if (response.ok) {
+      if (response.data.success) {
+        // Update theme store with new settings
+        updateSettings(localSettings);
         toast.success('Settings updated successfully!');
         setSuccess('Settings updated successfully!');
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError('Error saving settings');
+        const errorMessage = response.data.message || 'Error saving settings';
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err) {
-      setError('Error saving settings');
+      console.error('Error saving settings:', err);
+      const errorMessage = err.response?.data?.message || 'Error saving settings';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -97,21 +130,30 @@ const Settings = () => {
       setLoading(true);
       setError('');
 
-      const response = await axios.delete('/api/auth/account', {
+      const response = await axios.delete(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/auth/account`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        data: {
+          password: deletePassword
         }
       });
 
-      if (response.ok) {
+      if (response.data.success) {
         toast.success('Account deleted successfully');
         logout();
         navigate('/login');
       } else {
-        setError('Error deleting account');
+        const errorMessage = response.data.message || 'Error deleting account';
+        setError(errorMessage);
+        toast.error(errorMessage);
       }
     } catch (err) {
-      setError('Error deleting account');
+      console.error('Error deleting account:', err);
+      const errorMessage = err.response?.data?.message || 'Error deleting account';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
       setShowDeleteModal(false);
@@ -193,13 +235,18 @@ const Settings = () => {
               </label>
               <select
                 value={localSettings?.preferences?.theme || 'dark'}
-                onChange={(e) => setLocalSettings({
-                  ...localSettings,
-                  preferences: {
-                    ...localSettings.preferences,
-                    theme: e.target.value
-                  }
-                })}
+                onChange={(e) => {
+                  const newTheme = e.target.value;
+                  setLocalSettings({
+                    ...localSettings,
+                    preferences: {
+                      ...localSettings.preferences,
+                      theme: newTheme
+                    }
+                  });
+                  // Apply theme immediately
+                  setTheme(newTheme);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="light">Light</option>
@@ -213,13 +260,18 @@ const Settings = () => {
               </label>
               <select
                 value={localSettings?.preferences?.language || 'en'}
-                onChange={(e) => setLocalSettings({
-                  ...localSettings,
-                  preferences: {
-                    ...localSettings.preferences,
-                    language: e.target.value
-                  }
-                })}
+                onChange={(e) => {
+                  const newLanguage = e.target.value;
+                  setLocalSettings({
+                    ...localSettings,
+                    preferences: {
+                      ...localSettings.preferences,
+                      language: newLanguage
+                    }
+                  });
+                  // Apply language immediately
+                  setLanguage(newLanguage);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="en">English</option>
@@ -234,13 +286,18 @@ const Settings = () => {
               </label>
               <select
                 value={localSettings?.preferences?.timezone || 'UTC'}
-                onChange={(e) => setLocalSettings({
-                  ...localSettings,
-                  preferences: {
-                    ...localSettings.preferences,
-                    timezone: e.target.value
-                  }
-                })}
+                onChange={(e) => {
+                  const newTimezone = e.target.value;
+                  setLocalSettings({
+                    ...localSettings,
+                    preferences: {
+                      ...localSettings.preferences,
+                      timezone: newTimezone
+                    }
+                  });
+                  // Apply timezone immediately
+                  setTimezone(newTimezone);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="UTC">UTC</option>
@@ -258,13 +315,18 @@ const Settings = () => {
               </label>
               <select
                 value={localSettings?.preferences?.dateFormat || 'MM/DD/YYYY'}
-                onChange={(e) => setLocalSettings({
-                  ...localSettings,
-                  preferences: {
-                    ...localSettings.preferences,
-                    dateFormat: e.target.value
-                  }
-                })}
+                onChange={(e) => {
+                  const newDateFormat = e.target.value;
+                  setLocalSettings({
+                    ...localSettings,
+                    preferences: {
+                      ...localSettings.preferences,
+                      dateFormat: newDateFormat
+                    }
+                  });
+                  // Apply date format immediately
+                  setDateFormat(newDateFormat);
+                }}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="MM/DD/YYYY">MM/DD/YYYY</option>

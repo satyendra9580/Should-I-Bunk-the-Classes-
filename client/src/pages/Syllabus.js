@@ -172,15 +172,6 @@ const Syllabus = () => {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
@@ -205,6 +196,42 @@ const Syllabus = () => {
     acc[item.subject].push(item);
     return acc;
   }, {});
+
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'low':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300';
+    }
+  };
+
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty?.toLowerCase()) {
+      case 'hard':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'easy':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -262,25 +289,96 @@ const Syllabus = () => {
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2">
                     {subject}
                   </h3>
-                  <div className="grid gap-3">
+                  <div className="grid gap-4">
                     {items.map((item) => (
-                      <div key={item._id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-gray-50 dark:bg-gray-700/50">
-                        <div className="flex justify-between items-start">
+                      <div key={item._id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-6 bg-gray-50 dark:bg-gray-700/50 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-4">
                           <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                              <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">{item.topic}</h4>
+                            <div className="flex items-center gap-3 mb-3">
+                              <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{item.topic}</h4>
                               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${item.isCompleted ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-800 dark:bg-gray-600 dark:text-gray-300'}`}>
                                 {item.isCompleted ? 'Completed' : 'Pending'}
                               </span>
                             </div>
+                            
+                            {/* Topic Details Grid */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                              {item.subjectCode && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Subject Code</span>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.subjectCode}</p>
+                                </div>
+                              )}
+                              
+                              {item.priority && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Priority</span>
+                                  <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${getPriorityColor(item.priority)}`}>
+                                    {item.priority.charAt(0).toUpperCase() + item.priority.slice(1)}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {item.difficulty && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Difficulty</span>
+                                  <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${getDifficultyColor(item.difficulty)}`}>
+                                    {item.difficulty.charAt(0).toUpperCase() + item.difficulty.slice(1)}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {item.estimatedHours && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Est. Hours</span>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.estimatedHours}h</p>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Second Row */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                              {item.semester && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Semester</span>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Semester {item.semester}</p>
+                                </div>
+                              )}
+                              
+                              {item.academicYear && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Academic Year</span>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.academicYear}</p>
+                                </div>
+                              )}
+                              
+                              {item.weightage && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Weightage</span>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.weightage}%</p>
+                                </div>
+                              )}
+                              
+                              {item.dueDate && (
+                                <div>
+                                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Due Date</span>
+                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{formatDate(item.dueDate)}</p>
+                                </div>
+                              )}
+                            </div>
+
                             {item.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{item.description}</p>
+                              <div className="mb-4">
+                                <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">Description</span>
+                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{item.description}</p>
+                              </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 ml-4">
+                          
+                          <div className="flex flex-col gap-2 ml-4">
                             <button
                               onClick={() => handleStatusUpdate(item._id, item.isCompleted ? 'not_started' : 'completed')}
-                              className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
                                 item.isCompleted 
                                   ? 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-300 dark:hover:bg-gray-500' 
                                   : 'bg-green-600 text-white hover:bg-green-700'
@@ -290,7 +388,7 @@ const Syllabus = () => {
                             </button>
                             <button
                               onClick={() => handleDelete(item._id)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                              className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors"
                             >
                               Delete
                             </button>

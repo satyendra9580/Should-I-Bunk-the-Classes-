@@ -20,7 +20,7 @@ const Settings = () => {
       weeklyReports: false
     },
     preferences: {
-      theme: settings?.preferences?.theme || 'dark',
+      theme: 'dark',
       language: 'en',
       timezone: 'UTC',
       dateFormat: 'MM/DD/YYYY'
@@ -192,8 +192,14 @@ const Settings = () => {
                 Theme
               </label>
               <select
-                value={settings?.preferences?.theme || 'light'}
-                onChange={(e) => updateSetting('preferences', 'theme', e.target.value)}
+                value={localSettings?.preferences?.theme || 'dark'}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  preferences: {
+                    ...localSettings.preferences,
+                    theme: e.target.value
+                  }
+                })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="light">Light</option>
@@ -206,8 +212,14 @@ const Settings = () => {
                 Language
               </label>
               <select
-                value={settings?.preferences?.language || 'en'}
-                onChange={(e) => updateSetting('preferences', 'language', e.target.value)}
+                value={localSettings?.preferences?.language || 'en'}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  preferences: {
+                    ...localSettings.preferences,
+                    language: e.target.value
+                  }
+                })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="en">English</option>
@@ -221,8 +233,14 @@ const Settings = () => {
                 Timezone
               </label>
               <select
-                value={settings?.preferences?.timezone || 'UTC'}
-                onChange={(e) => updateSetting('preferences', 'timezone', e.target.value)}
+                value={localSettings?.preferences?.timezone || 'UTC'}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  preferences: {
+                    ...localSettings.preferences,
+                    timezone: e.target.value
+                  }
+                })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="UTC">UTC</option>
@@ -239,8 +257,14 @@ const Settings = () => {
                 Date Format
               </label>
               <select
-                value={settings?.preferences?.dateFormat || 'MM/DD/YYYY'}
-                onChange={(e) => updateSetting('preferences', 'dateFormat', e.target.value)}
+                value={localSettings?.preferences?.dateFormat || 'MM/DD/YYYY'}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  preferences: {
+                    ...localSettings.preferences,
+                    dateFormat: e.target.value
+                  }
+                })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -268,8 +292,14 @@ const Settings = () => {
                 type="number"
                 min="0"
                 max="100"
-                value={settings?.academic?.defaultAttendanceGoal || 75}
-                onChange={(e) => updateSetting('academic', 'defaultAttendanceGoal', parseInt(e.target.value))}
+                value={localSettings?.academic?.defaultAttendanceGoal || 75}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  academic: {
+                    ...localSettings.academic,
+                    defaultAttendanceGoal: parseInt(e.target.value)
+                  }
+                })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>
@@ -281,8 +311,14 @@ const Settings = () => {
                 type="number"
                 min="1"
                 max="30"
-                value={settings?.academic?.reminderDaysBefore || 3}
-                onChange={(e) => updateSetting('academic', 'reminderDaysBefore', parseInt(e.target.value))}
+                value={localSettings?.academic?.reminderDaysBefore || 3}
+                onChange={(e) => setLocalSettings({
+                  ...localSettings,
+                  academic: {
+                    ...localSettings.academic,
+                    reminderDaysBefore: parseInt(e.target.value)
+                  }
+                })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
             </div>

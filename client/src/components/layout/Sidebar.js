@@ -68,10 +68,10 @@ const Sidebar = ({ isOpen, onClose }) => {
               className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <span className="text-lg">
-                {(settings?.preferences?.theme || 'light') === 'dark' ? '☀️' : '🌙'}
+                🌙
               </span>
               <span>
-                {(settings?.preferences?.theme || 'light') === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                Dark Mode
               </span>
             </button>
           </div>

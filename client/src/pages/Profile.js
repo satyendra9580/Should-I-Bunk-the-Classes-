@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
+import { toast } from 'react-hot-toast';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { formatDate } from '../lib/utils';
 
@@ -51,23 +52,29 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      const response = await axios.put('/api/auth/profile', formData, {
+      const response = await axios.put(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/auth/profile`, formData, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      updateProfile(response.data.user);
-      setSuccess('Profile updated successfully!');
-      setIsEditing(false);
-      setTimeout(() => setSuccess(''), 3000);
+      if (response.data.success) {
+        updateProfile(response.data.user);
+        setSuccess('Profile updated successfully!');
+        setIsEditing(false);
+        toast.success('Profile updated successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const errorMessage = response.data.message || 'Failed to update profile';
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
     } catch (err) {
       console.error('Profile update error:', err);
-      if (err.response && err.response.data) {
-        setError(err.response.data.message || 'Failed to update profile');
-      } else {
-        setError('Error updating profile');
-      }
+      const errorMessage = err.response?.data?.message || 'Error updating profile';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -91,26 +98,32 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      const response = await axios.put('/api/auth/change-password', {
+      const response = await axios.put(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/auth/change-password`, {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
 
-      setSuccess('Password changed successfully!');
-      setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setShowPasswordForm(false);
-      setTimeout(() => setSuccess(''), 3000);
+      if (response.data.success) {
+        setSuccess('Password changed successfully!');
+        setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+        setShowPasswordForm(false);
+        toast.success('Password changed successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        const errorMessage = response.data.message || 'Failed to change password';
+        setError(errorMessage);
+        toast.error(errorMessage);
+      }
     } catch (err) {
       console.error('Error changing password:', err);
-      if (err.response && err.response.data) {
-        setError(err.response.data.message || 'Failed to change password');
-      } else {
-        setError('Error changing password');
-      }
+      const errorMessage = err.response?.data?.message || 'Error changing password';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

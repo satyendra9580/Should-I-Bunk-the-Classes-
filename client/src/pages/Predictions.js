@@ -28,14 +28,14 @@ const Predictions = () => {
     setError('');
     
     try {
-      const response = await axios.get('/api/predictions/auto', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/predictions/auto`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      const predictionData = response.data.prediction;
-      const summaryData = response.data.summary || {};
+      const predictionData = response.data.data?.prediction;
+      const summaryData = response.data.data?.summary || {};
       
       setPrediction(predictionData);
       setSummary(summaryData);
@@ -85,7 +85,7 @@ const Predictions = () => {
     setStreamedText('');
 
     try {
-      const response = await axios.post('/api/predictions/ai-recommendations-stream', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/predictions/ai-recommendations-stream`, {
         attendanceData: summary?.attendanceData,
         examData: summary?.examData,
         syllabusData: summary?.syllabusData,

@@ -5,6 +5,11 @@ import { toast } from 'react-hot-toast';
 import LoadingSpinner from '../components/ui/LoadingSpinner';
 import { formatDate } from '../lib/utils';
 
+// Create a separate axios instance for profile API calls
+const profileAPI = axios.create({
+  baseURL: process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com',
+});
+
 const Profile = () => {
   const { user, token, updateProfile } = useAuthStore();
   const [loading, setLoading] = useState(false);
@@ -52,7 +57,7 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      const response = await axios.put('/auth/profile', formData, {
+      const response = await profileAPI.put('/api/auth/profile', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -98,7 +103,7 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      const response = await axios.put('/auth/change-password', {
+      const response = await profileAPI.put('/api/auth/change-password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, {

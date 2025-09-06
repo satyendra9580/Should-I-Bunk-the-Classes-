@@ -39,7 +39,7 @@ const Syllabus = () => {
   const fetchSyllabusData = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('/api/syllabus', {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/syllabus`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -82,10 +82,19 @@ const Syllabus = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/syllabus', {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/syllabus`, {
         subject: formData.subject,
+        subjectCode: formData.subjectCode,
         topic: formData.topic,
-        priority: formData.priority
+        description: formData.description,
+        difficulty: formData.difficulty,
+        priority: formData.priority,
+        estimatedHours: formData.estimatedHours,
+        semester: formData.semester,
+        academicYear: formData.academicYear,
+        weightage: formData.weightage,
+        dueDate: formData.dueDate,
+        status: formData.status
       }, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -106,10 +115,14 @@ const Syllabus = () => {
         dueDate: '',
         status: 'not_started'
       });
+      
+      toast.success('Syllabus topic added successfully!');
       fetchSyllabusData();
     } catch (err) {
-      setError('Error adding syllabus item');
-      toast.error('Failed to add syllabus item');
+      console.error('Error adding syllabus item:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to add syllabus item';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -119,7 +132,7 @@ const Syllabus = () => {
       // Convert status to isCompleted boolean for backend
       const isCompleted = newStatus === 'completed';
       
-      const response = await axios.put(`/api/syllabus/${itemId}`, {
+      const response = await axios.put(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/syllabus/${itemId}`, {
         isCompleted
       }, {
         headers: {
@@ -129,8 +142,7 @@ const Syllabus = () => {
 
       
       toast.success('Status updated successfully!');
-      // Force refresh the data
-      await fetchSyllabusData();
+      fetchSyllabusData();
     } catch (err) {
       console.error('Error updating status:', err);
       setError('Error updating status');
@@ -144,19 +156,19 @@ const Syllabus = () => {
     }
 
     try {
-      const response = await axios.delete(`/api/syllabus/${itemId}`, {
+      await axios.delete(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/syllabus/${itemId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (response.ok) {
-        fetchSyllabusData();
-      } else {
-        setError('Failed to delete syllabus item');
-      }
+      toast.success('Syllabus item deleted successfully!');
+      fetchSyllabusData();
     } catch (err) {
-      setError('Error deleting syllabus item');
+      console.error('Error deleting syllabus item:', err);
+      const errorMessage = err.response?.data?.message || 'Failed to delete syllabus item';
+      setError(errorMessage);
+      toast.error(errorMessage);
     }
   };
 
@@ -426,7 +438,48 @@ const Syllabus = () => {
                 </div>
               </div>
 
-              {/* Row 4: Description */}
+              {/* Row 4: Semester and Academic Year */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Semester *
+                  </label>
+                  <select
+                    name="semester"
+                    value={formData.semester}
+                    onChange={(e) => setFormData({...formData, semester: parseInt(e.target.value)})}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
+                    required
+                  >
+                    <option value={1}>Semester 1</option>
+                    <option value={2}>Semester 2</option>
+                    <option value={3}>Semester 3</option>
+                    <option value={4}>Semester 4</option>
+                    <option value={5}>Semester 5</option>
+                    <option value={6}>Semester 6</option>
+                    <option value={7}>Semester 7</option>
+                    <option value={8}>Semester 8</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Academic Year *
+                  </label>
+                  <input
+                    type="text"
+                    name="academicYear"
+                    value={formData.academicYear}
+                    onChange={(e) => setFormData({...formData, academicYear: e.target.value})}
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 transition-colors"
+                    required
+                    placeholder="2024-2025"
+                    pattern="^\d{4}-\d{4}$"
+                  />
+                </div>
+              </div>
+
+              {/* Row 5: Description */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Description

@@ -52,7 +52,7 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      const response = await axios.put(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/auth/profile`, formData, {
+      const response = await axios.put('/auth/profile', formData, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -98,7 +98,7 @@ const Profile = () => {
       setError('');
       setSuccess('');
 
-      const response = await axios.put(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/auth/change-password`, {
+      const response = await axios.put('/auth/change-password', {
         currentPassword: passwordData.currentPassword,
         newPassword: passwordData.newPassword
       }, {

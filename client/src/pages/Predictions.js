@@ -13,8 +13,6 @@ const Predictions = () => {
   const [error, setError] = useState('');
   const [aiLoading, setAiLoading] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState(null);
-  const [streamedText, setStreamedText] = useState('');
-  const [isStreaming, setIsStreaming] = useState(false);
 
 
   useEffect(() => {
@@ -79,13 +77,11 @@ const Predictions = () => {
 
   const handleEnhancedRecommendations = async () => {
     setAiLoading(true);
-    setIsStreaming(true);
     setError('');
     setAiRecommendations(null);
-    setStreamedText('');
 
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/predictions/ai-recommendations-stream`, {
+      const response = await axios.post(`${process.env.REACT_APP_API_URL || 'https://should-i-bunk-the-classes.onrender.com'}/api/predictions/ai-recommendations`, {
         attendanceData: summary?.attendanceData,
         examData: summary?.examData,
         syllabusData: summary?.syllabusData,
@@ -94,53 +90,20 @@ const Predictions = () => {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
-        },
-        responseType: 'stream'
+        }
       });
 
-      const reader = response.data.getReader();
-      const decoder = new TextDecoder();
-      let fullText = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              if (data.error) {
-                throw new Error(data.error);
-              }
-              
-              if (data.content) {
-                fullText += data.content;
-                setStreamedText(fullText);
-              }
-              
-              if (data.done) {
-                setAiRecommendations({ aiRecommendation: fullText });
-                setIsStreaming(false);
-                toast.success('AI recommendations generated successfully!');
-              }
-            } catch (e) {
-              console.error('Error parsing SSE data:', e);
-            }
-          }
-        }
-      }
+      const aiResult = response.data.data;
+      setAiRecommendations(aiResult);
+      toast.success('AI recommendations generated successfully!');
+      
     } catch (err) {
       console.error('Error getting AI recommendations:', err);
-      setError('Error connecting to AI service. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Error connecting to AI service. Please try again.';
+      setError(errorMessage);
       toast.error('Error connecting to AI service');
     } finally {
       setAiLoading(false);
-      setIsStreaming(false);
     }
   };
 
@@ -489,26 +452,10 @@ const Predictions = () => {
             </div>
 
             <div className="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 dark:from-indigo-900/20 dark:via-purple-900/20 dark:to-pink-900/20 rounded-3xl border-2 border-indigo-200 dark:border-indigo-700 p-8 shadow-xl">
-              {isStreaming && (
-                <div className="mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="flex gap-1">
-                      <div className="w-3 h-3 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-3 h-3 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-3 h-3 bg-pink-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                    </div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400 italic">AI is analyzing your academic data...</span>
-                  </div>
-                </div>
-              )}
-
               <div className="bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm rounded-xl p-8 border border-white/50 dark:border-gray-700/50">
                 <div className="prose prose-lg dark:prose-invert max-w-none">
                   <div className="whitespace-pre-wrap text-gray-800 dark:text-gray-200 leading-relaxed">
-                    {isStreaming ? streamedText : (aiRecommendations?.aiRecommendation || aiRecommendations?.fallbackRecommendation)}
-                    {isStreaming && streamedText && (
-                      <span className="inline-block w-4 h-5 ml-1 bg-gray-600 dark:bg-gray-400 animate-pulse"></span>
-                    )}
+                    {aiRecommendations?.aiRecommendation || aiRecommendations?.fallbackRecommendation}
                   </div>
                 </div>
               </div>

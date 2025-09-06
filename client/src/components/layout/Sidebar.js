@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import useThemeStore from '../../store/themeStore';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const { user } = useAuthStore();
+  const { theme, setTheme } = useThemeStore();
   const location = useLocation();
 
   if (!user) return null;
@@ -19,8 +21,8 @@ const Sidebar = ({ isOpen, onClose }) => {
   ];
 
   const toggleTheme = () => {
-    // Theme toggle functionality can be added later
-    console.log('Theme toggle clicked');
+    const newTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
   };
 
   return (
@@ -68,10 +70,10 @@ const Sidebar = ({ isOpen, onClose }) => {
               className="flex items-center space-x-3 px-3 py-2 rounded-md text-sm font-medium transition-colors w-full text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <span className="text-lg">
-                🌙
+                {theme === 'dark' ? '☀️' : '🌙'}
               </span>
               <span>
-                Dark Mode
+                {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
               </span>
             </button>
           </div>
